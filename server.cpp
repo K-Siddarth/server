@@ -2,12 +2,15 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
+// #include <sys/stat.h>
+#include <dirent.h>
+
+#include <filesystem>
+#include <fstream>
 
 #define PORT 27121
 #define BUFFER_SIZE 30720
@@ -121,10 +124,21 @@ int main() {
     if (j.contains("name")) {
       problem_name = j["name"];
     }
+    int ind = 0;
+    while (ind < int(problem_name.size())) {
+      if (problem_name[ind] == '.' || problem_name[ind] == ':')
+        problem_name.erase(ind, 1);
+      else {
+        if (problem_name[ind] == ' ') problem_name[ind] = '_';
+        ind++;
+      }
+    }
 
     // making dirs and copying contents from template dir:
-    std::string contest_dir = CP_DIR + contest_name + "/";
-
+    // std::string contest_dir=CP_DIR+contest_name+"/";
+    getcwd(buffer, BUFFER_SIZE);
+    std::string contest_dir = buffer;
+    contest_dir.push_back('/');
     // file permission bits:
     // 7 means read, write and execute.
     // 6 means read and write.
@@ -172,10 +186,11 @@ int main() {
                 << "\n";
     }
     // copying from template dir:
-    std::filesystem::path in_sol_dir = TEMPLATE_DIR + problem_dir_path + ".cpp";
+    std::filesystem::path in_sol_dir = TEMPLATE_DIR + "sol.cpp";
     std::filesystem::path in_makeFile_dir = TEMPLATE_DIR + "Makefile";
 
-    std::filesystem::path out_sol_dir = problem_dir_path + "sol.cpp";
+    std::filesystem::path out_sol_dir =
+        problem_dir_path + problem_name + ".cpp";
     std::filesystem::path out_makeFile_dir = problem_dir_path + "Makefile";
 
     try {
